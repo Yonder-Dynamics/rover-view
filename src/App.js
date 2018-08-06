@@ -5,7 +5,8 @@ import './App.css';
 import './bootstrap.css';
 
 import HomePage from './home/HomePage.js';
-import SettingsPage from './settings/SettingsPage.js'
+import SettingsPage from './settings/SettingsPage.js';
+import DrivePage from './drive/DrivePage.js';
 
 function make_navbar_link(path, text){
   return (
@@ -20,6 +21,7 @@ class App extends Component {
     let navItems = [
       ["/",         "Home"],
       ["/drive",    "Drive"],
+      ["/nav",      "Navigation"],
       ["/settings", "Settings"],
     ].map((pair)=>make_navbar_link.apply(null, pair));
 
@@ -38,6 +40,7 @@ class App extends Component {
           </nav>
           <Route exact path="/" component={HomePage}/>
           <Route exact path="/settings" component={SettingsPage}/>
+          <Route exact path="/drive" component={DrivePage}/>
         </div>
       </Router>
     );
