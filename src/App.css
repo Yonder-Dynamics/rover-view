@@ -7,6 +7,11 @@
   height: 80px;
 }
 
+.control-panel-nav .navbar-item{
+  text-align: left;
+  float: left;
+}
+
 .App-header {
   background-color: #222;
   height: 150px;
@@ -20,6 +25,7 @@
 
 .App-intro {
   font-size: large;
+  background-color: white;
 }
 
 @keyframes App-logo-spin {
