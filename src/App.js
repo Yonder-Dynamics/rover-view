@@ -10,7 +10,7 @@ import DrivePage from './drive/DrivePage.js';
 
 function make_navbar_link(path, text){
   return (
-    <div className="nav-item">
+    <div className="nav-item" key={path}>
       <Link className="nav-link" to={path}>{text}</Link>
     </div>
   )
@@ -30,7 +30,7 @@ class App extends Component {
         <div className="App">
           <nav className="control-panel-nav navbar navbar-expand bg-dark">
             <Link className="navbar-brand" to='/' >
-              <img src={logo} width="40px"/>
+              <img src={logo} width="40px" alt="yonder logo"/>
             </Link>
             <div className="navbar-collapse">
              <div className="navbar-nav">
