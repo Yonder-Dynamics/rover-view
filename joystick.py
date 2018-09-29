@@ -14,6 +14,8 @@ prev_msg_type = 1
 ignored = 0
 last_message_send = time.time()
 
+ENABLE_SERIAL = True
+
 def openSerial():
     global s
     s = Serial(serial_port, BAUDRATE)
