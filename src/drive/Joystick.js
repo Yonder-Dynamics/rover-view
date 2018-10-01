@@ -1,12 +1,15 @@
 import React, {Component} from 'react';
 
+import requestFullscreen from '../utils/Fullscreen.js';
+
 const joystickContainerId = "joystick-container";
 
 class Joystick extends Component {
     constructor(props){
         super(props);
 
-        this.rSquared = this.props.innerSize * this.props.innerSize;
+        this.maxDisplacement = this.props.innerSize / 2;
+        this.rSquared = this.maxDisplacement * this.maxDisplacement;
 
         this.state = {
             x: 0,
@@ -19,11 +22,12 @@ class Joystick extends Component {
         this.releaseJoystick = this.releaseJoystick.bind(this);
         this.getGrab = this.getGrab.bind(this);
         this.updateJoystick = this.updateJoystick.bind(this);
+        this.fullscreenJoystick = this.fullscreenJoystick.bind(this);
     }
     grabJoystick(x, y){
         let grab = this.getGrab(x,y);
 
-        if (grab.magnitude < this.rSquared){
+        if (grab.magnitude < this.maxDisplacement){
             this.updateJoystick(grab, true);
         }
     }
@@ -34,7 +38,7 @@ class Joystick extends Component {
         let angle = Math.atan2(offsetY, offsetX);
         let mag = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
         
-        let clamped = Math.min(mag, this.props.innerSize);
+        let clamped = Math.min(mag, this.maxDisplacement);
         let dotX = Math.cos(angle) * clamped;
         let dotY = Math.sin(angle) * clamped;
         
@@ -48,9 +52,7 @@ class Joystick extends Component {
     moveJoystick(x, y){
         if (this.state.grabbed){
             let grab = this.getGrab(x, y);
-            if (grab.magnitude < this.rSquared){
-                this.updateJoystick(grab, true);
-            }
+            this.updateJoystick(grab, true);
         }
     }
     releaseJoystick(x, y){
@@ -73,16 +75,19 @@ class Joystick extends Component {
             client.apis.default.joystick_drive({
                 joystick: {
                     angle: info.angle - Math.PI/2,
-                    magnitude: info.magnitude
+                    magnitude: Math.min(info.magnitude/this.maxDisplacement, 1.0),
                 }
             });
         })
+    }
+    fullscreenJoystick(){
+        console.log("got here");
+        requestFullscreen(document.getElementById(joystickContainerId));
     }
     componentDidMount(){
         function handleTouch(handler){
             return (e=>{
                 e.preventDefault();
-                e.stopPropagation();
                 if (!e.touches[0]){
                     handler(0, 0);
                     return;
@@ -133,9 +138,12 @@ class Joystick extends Component {
         };
 
         return (
-            <div id={joystickContainerId} style={containerStyle} {...handlers}>
-                <div style={outerStyle}></div>
-                <div style={innerStyle}></div>
+            <div>
+                <div id={joystickContainerId} style={containerStyle} {...handlers}>
+                    <div style={outerStyle}></div>
+                    <div style={innerStyle}></div>
+                </div>
+                <button className="btn btn-success" onClick={this.fullscreenJoystick}>Fullscreen</button>
             </div>
         );
     }

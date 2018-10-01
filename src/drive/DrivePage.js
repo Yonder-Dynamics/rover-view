@@ -21,24 +21,10 @@ class DrivePage extends Component {
                         outerSize={100}
                         innerSize={85}>
                     </Joystick>
-                    {/* <button className="btn btn-success" onClick={joystickFullscreen}>Fullscreen</button> */}
                 </div>
             </div>
         );
     }
-}
-
-function joystickFullscreen(e){
-    let joystickCanvas = document.getElementById(joystickCanvasId);
-    if (joystickCanvas.requestFullscreen) {
-        joystickCanvas.requestFullscreen();
-    } else if (joystickCanvas.webkitRequestFullscreen) {
-        joystickCanvas.webkitRequestFullscreen();
-    }
-    joystickCanvas.width = joystickCanvas.clientWidth;
-    joystickCanvas.height = joystickCanvas.clientHeight;
-    joystickCanvas.style.width = joystickCanvas.clientWidth;
-    joystickCanvas.style.height = joystickCanvas.clientHeight;
 }
 
 export default DrivePage;
