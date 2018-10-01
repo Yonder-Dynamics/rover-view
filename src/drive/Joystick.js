@@ -1,139 +1,160 @@
 import React, {Component} from 'react';
-import Swagger from 'swagger-client';
+
+const joystickContainerId = "joystick-container";
 
 class Joystick extends Component {
-  componentDidMount(){
-    let canvas = document.getElementById('joystick-1');
-    let ctx = canvas.getContext('2d');
-    let width = canvas.clientWidth, height = canvas.clientHeight;
-    clearCanvas(ctx, width, height);
+    constructor(props){
+        super(props);
 
-    let joystickRadius = 40;
+        this.rSquared = this.props.innerSize * this.props.innerSize;
 
-    let joystickSize = 15;
-    let joystickSquared = joystickSize * joystickSize;
-
-    let grabbed = false;
-
-    canvas.addEventListener("touchstart", function (e) {
-      e.preventDefault();
-      var mousePos = getTouchPos(canvas, e);
-      var touch = e.touches[0];
-      var mouseEvent = new MouseEvent("mousedown", {
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        offsetX: mousePos.x,
-        offsetY: mousePos.y
-      });
-      canvas.dispatchEvent(mouseEvent);
-    }, false);
-    canvas.addEventListener("touchend", function (e) {
-      e.preventDefault();
-      var mouseEvent = new MouseEvent("mouseup", {});
-      canvas.dispatchEvent(mouseEvent);
-    }, false);
-    canvas.addEventListener("touchmove", function (e) {
-      e.preventDefault();
-      var mousePos = getTouchPos(canvas, e);
-      var touch = e.touches[0];
-      var mouseEvent = new MouseEvent("mousemove", {
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        offsetX: mousePos.x,
-        offsetY: mousePos.y
-      });
-      canvas.dispatchEvent(mouseEvent);
-    }, false);
-
-    // Get the position of a touch relative to the canvas
-    function getTouchPos(canvasDom, touchEvent) {
-      var rect = canvasDom.getBoundingClientRect();
-      return {
-        x: touchEvent.touches[0].clientX - rect.left,
-        y: touchEvent.touches[0].clientY - rect.top
-      };
+        this.state = {
+            x: 0,
+            y: 0,
+            containerSize: this.props.outerSize * 2,
+        }
+        
+        this.grabJoystick = this.grabJoystick.bind(this);
+        this.moveJoystick = this.moveJoystick.bind(this);
+        this.releaseJoystick = this.releaseJoystick.bind(this);
+        this.getGrab = this.getGrab.bind(this);
+        this.updateJoystick = this.updateJoystick.bind(this);
     }
-    function tryGrab(e){ 
-      e.preventDefault();
-      let offsetX = e.offsetX - width/2, offsetY = e.offsetY - height/2;
-      if ((offsetX * offsetX + offsetY * offsetY) < joystickSquared) {
-        grabbed = true;
-      }
+    grabJoystick(x, y){
+        let grab = this.getGrab(x,y);
+
+        if (grab.magnitude < this.rSquared){
+            this.updateJoystick(grab, true);
+        }
     }
-
-    canvas.addEventListener('mousedown', tryGrab);
-
-    //var client = Swagger('https://10.42.0.222:3000/ctrl/swagger.json');
-    var client = Swagger('/ctrl/swagger.json');
-    console.log(client);
-
-    client.catch(err=>{console.log(err)});
-
-    function updateJoystick(x, y){
-      clearCanvas(ctx, width, height);
-      drawBoundary(ctx, width, height, joystickRadius);
-      let vals = drawJoystick(ctx, width, height, joystickRadius, joystickSize, x, y);
-      let angle = vals[0] + Math.PI;
-      let mag = vals[1]/joystickRadius;
-      client.then( client => {
-        client.apis.default.joystick_drive({joystick: {angle:angle,magnitude:mag}});
-      })
+    getGrab(x, y){
+        let rect = document.getElementById(joystickContainerId).getBoundingClientRect();
+        let center = this.state.containerSize / 2;
+        let offsetX = x - rect.x - center, offsetY = center - y + rect.y;
+        let angle = Math.atan2(offsetY, offsetX);
+        let mag = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+        
+        let clamped = Math.min(mag, this.props.innerSize);
+        let dotX = Math.cos(angle) * clamped;
+        let dotY = Math.sin(angle) * clamped;
+        
+        return {
+            x: dotX,
+            y: dotY,
+            magnitude: mag,
+            angle: angle,
+        }
     }
-
-    function tryMove(e){
-      e.preventDefault();
-      if (!grabbed){
-        return;
-      }
-      // angle and magnitude of joystick movement
-      let offsetX = e.offsetX - width/2, offsetY = e.offsetY - height/2;
-      updateJoystick(offsetX, offsetY);
+    moveJoystick(x, y){
+        if (this.state.grabbed){
+            let grab = this.getGrab(x, y);
+            if (grab.magnitude < this.rSquared){
+                this.updateJoystick(grab, true);
+            }
+        }
     }
-    canvas.addEventListener('mousemove', tryMove);
-
-    function releaseJoystick(e){
-      e.preventDefault();
-      grabbed = false;
-      updateJoystick(0, 0);
+    releaseJoystick(x, y){
+        if (this.state.grabbed){
+            this.updateJoystick({
+                x: 0,
+                y: 0,
+                angle: 0,
+                magnitude: 0,
+            }, false);
+        }
     }
+    updateJoystick(info, grabbed){
+        this.setState({
+            x: info.x,
+            y: info.y,
+            grabbed: grabbed,
+        });
+        this.props.client.then( client => {
+            client.apis.default.joystick_drive({
+                joystick: {
+                    angle: info.angle - Math.PI/2,
+                    magnitude: info.magnitude
+                }
+            });
+        })
+    }
+    componentDidMount(){
+        function handleTouch(handler){
+            return (e=>{
+                e.preventDefault();
+                e.stopPropagation();
+                if (!e.touches[0]){
+                    handler(0, 0);
+                    return;
+                }
+                var touch = e.touches[0];
+                handler(touch.clientX, touch.clientY);
+            });
+        };
+        let elem = document.getElementById(joystickContainerId);
+        elem.addEventListener("touchstart", handleTouch(this.grabJoystick), false);
+        elem.addEventListener("touchmove", handleTouch(this.moveJoystick), false);
+        elem.addEventListener("touchend", handleTouch(this.releaseJoystick), false);
+        elem.addEventListener("touchcancel", handleTouch(this.releaseJoystick), false);
+    }
+    componentWillUnmount(){
+        let elem = document.getElementById(joystickContainerId);
+        elem.removeEventListener("touchstart");
+        elem.removeEventListener("touchmove");
+        elem.removeEventListener("touchend");
+        elem.removeEventListener("touchcancel");
+    }
+    render(){
+        let containerSize = this.state.containerSize;
+        let containerStyle = {
+            touchAction: "none",
+            background: "black",
+            height: containerSize,
+            width: containerSize,
+        }
+        let outerSize = this.props.outerSize;
+        let outerStyle = makeJoystickStyle(outerSize, containerSize, "red", 0, 0);
+        let innerSize = this.props.innerSize;
+        let innerStyle = makeJoystickStyle(innerSize, containerSize, "blue", this.state.x, this.state.y);
 
-    canvas.addEventListener('mouseup', releaseJoystick);
-    canvas.addEventListener('mouseout', releaseJoystick);
+        if (!this.state.grabbed){
+            innerStyle.transition = "250ms ease";
+        }
 
-    releaseJoystick({preventDefault:()=>{}}); // set up the canvas initially
-  }
-  render(){
-    return (
-      <canvas id="joystick-1">Canvas Not Supported by this browser</canvas>
-    );
-  }
+        function handleMouse(handler){
+            return (e=>handler(e.clientX, e.clientY));
+        }
+
+        let handlers = {
+            onMouseDown: handleMouse(this.grabJoystick),
+            onMouseMove: handleMouse(this.moveJoystick),
+            onMouseUp: handleMouse(this.releaseJoystick),
+            onMouseOut: handleMouse(this.releaseJoystick),
+        };
+
+        return (
+            <div id={joystickContainerId} style={containerStyle} {...handlers}>
+                <div style={outerStyle}></div>
+                <div style={innerStyle}></div>
+            </div>
+        );
+    }
 }
 
-function clearCanvas(context, width, height){
-  context.fillStyle = 'black';
-  context.fillRect(0,0,width,height);
-}
-
-function drawBoundary(context, width, height, radius){
-  context.strokeStyle = 'white';
-  context.beginPath();
-  context.arc(width/2, height/2, radius, 0, Math.PI*2, true);
-  context.stroke();
-}
-
-function drawJoystick(context, width, height, radius, size, offsetX, offsetY){
-  let angle = Math.atan2(offsetY, offsetX);
-  let mag = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-
-  let clamped = Math.min(mag, radius);
-  let dotX = Math.cos(angle) * clamped;
-  let dotY = Math.sin(angle) * clamped;
-  context.beginPath();
-  context.fillStyle = 'white';
-  context.arc(width/2 + dotX, height/2 + dotY, size, 0, Math.PI*2, false);
-  context.fill();
-
-  return [angle, clamped];
+function makeJoystickStyle(size, containerSize, color, x, y){
+    let margin = (containerSize - size) / 2;
+    return {
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: color,
+        display: "block",
+        position: "absolute",
+        opacity: 0.5,
+        marginTop: margin - y,
+        marginLeft: margin + x,
+        touchAction: "none",
+    }
 }
 
 export default Joystick;

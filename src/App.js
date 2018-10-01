@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+
+import Swagger from 'swagger-client';
+
 import logo from './YonderLogoSquare.png';
 import './App.css';
 import './bootstrap.css';
@@ -17,6 +20,14 @@ function make_navbar_link(path, text){
 }
 
 class App extends Component {
+  constructor(props){
+    super(props);
+
+    this.client = Swagger('/ctrl/swagger.json');
+    this.client.catch(err=>{console.log(err)});
+
+    this.render.bind(this);
+  }
   render() {
     let navItems = [
       ["/",         "Home"],
@@ -24,7 +35,10 @@ class App extends Component {
       ["/nav",      "Navigation"],
       ["/settings", "Settings"],
     ].map((pair)=>make_navbar_link.apply(null, pair));
-
+    let client = this.client;
+    function wrapClient(component){
+      return ()=>React.createElement(component, {client: client});
+    }
     return (
       <Router>
         <div className="App">
@@ -38,9 +52,9 @@ class App extends Component {
               </div>
             </div>
           </nav>
-          <Route exact path="/" component={HomePage}/>
-          <Route exact path="/settings" component={SettingsPage}/>
-          <Route exact path="/drive" component={DrivePage}/>
+          <Route exact path="/" component={wrapClient(HomePage)}/>
+          <Route exact path="/settings" component={wrapClient(SettingsPage)}/>
+          <Route exact path="/drive" component={wrapClient(DrivePage)}/>
         </div>
       </Router>
     );
