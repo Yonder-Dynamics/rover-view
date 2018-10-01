@@ -4,9 +4,6 @@ import Joystick from './Joystick.js'
 
 const video = '/big_buck_bunny.mp4';
 
-const joystickContainerId = "joystick-container";
-const joystickCanvasId = "joystick-canvas"
-
 class DrivePage extends Component {
     render(){
         return (
@@ -14,9 +11,8 @@ class DrivePage extends Component {
                 {/* <video width="320" height="240" controls>
                     <source src={video} type="video/mp4"/>
                 </video> */}
-                <div className="container-fluid" id={joystickContainerId}>
+                <div className="container-fluid">
                     <Joystick
-                        canvasId={joystickCanvasId}
                         client={this.props.client}
                         outerSize={100}
                         innerSize={85}>
