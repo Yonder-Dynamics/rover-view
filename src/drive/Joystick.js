@@ -4,18 +4,21 @@ import requestFullscreen from '../utils/Fullscreen.js';
 
 const joystickContainerId = "joystick-container";
 
+var containerIds = 0;
+
 class Joystick extends Component {
     constructor(props){
         super(props);
 
+        this.containerId = joystickContainerId + "-" + (++containerIds);
         this.maxDisplacement = this.props.innerSize / 2;
         this.rSquared = this.maxDisplacement * this.maxDisplacement;
 
         this.state = {
             x: 0,
             y: 0,
-            containerWidth: this.props.outerSize * 2,
-            containerHeight: this.props.outerSize * 2,
+            containerWidth: this.props.width,
+            containerHeight: this.props.height,
         }
         
         this.grabJoystick = this.grabJoystick.bind(this);
@@ -33,7 +36,7 @@ class Joystick extends Component {
         }
     }
     getGrab(x, y){
-        let rect = document.getElementById(joystickContainerId).getBoundingClientRect();
+        let rect = document.getElementById(this.containerId).getBoundingClientRect();
         let centerX = this.state.containerWidth / 2;
         let centerY = this.state.containerHeight / 2;
         let offsetX = x - rect.x - centerX, offsetY = centerY - y + rect.y;
@@ -73,17 +76,13 @@ class Joystick extends Component {
             y: info.y,
             grabbed: grabbed,
         });
-        this.props.client.then( client => {
-            client.apis.default.joystick_drive({
-                joystick: {
-                    angle: info.angle - Math.PI/2,
-                    magnitude: Math.min(info.magnitude/this.maxDisplacement, 1.0),
-                }
-            });
-        })
+        this.props.client.send({
+            angle: info.angle,
+            magnitude: Math.min(info.magnitude/this.maxDisplacement, 1.0),
+        });
     }
     fullscreenJoystick(){
-        let container = document.getElementById(joystickContainerId);
+        let container = document.getElementById(this.containerId);
         requestFullscreen(container);
         this.setState({
             containerHeight:window.innerHeight,
@@ -102,32 +101,43 @@ class Joystick extends Component {
                 handler(touch.clientX, touch.clientY);
             });
         };
-        let elem = document.getElementById(joystickContainerId);
+        let elem = document.getElementById(this.containerId);
         elem.addEventListener("touchstart", handleTouch(this.grabJoystick), false);
         elem.addEventListener("touchmove", handleTouch(this.moveJoystick), false);
         elem.addEventListener("touchend", handleTouch(this.releaseJoystick), false);
         elem.addEventListener("touchcancel", handleTouch(this.releaseJoystick), false);
     }
     componentWillUnmount(){
-        let elem = document.getElementById(joystickContainerId);
+        let elem = document.getElementById(this.containerId);
         elem.removeEventListener("touchstart", null);
         elem.removeEventListener("touchmove", null);
         elem.removeEventListener("touchend", null);
         elem.removeEventListener("touchcancel", null);
     }
     render(){
+        let wrapperStyle = {
+            height: containerHeight,
+            width: "auto",
+            background: "black",
+            textAlign: "center",
+            display: "inline-block",
+            flexGrow: 1,
+        };
         let containerHeight = this.state.containerHeight;
         let containerWidth = this.state.containerWidth;
         let containerStyle = {
+            display: "inline-block",
             touchAction: "none",
-            background: "black",
             height: containerHeight,
             width: containerWidth,
+            borderRadius: "10px",
+            borderStyle: "solid",
+            borderColor: "red",
         }
         let outerSize = this.props.outerSize;
-        let outerStyle = makeJoystickStyle(outerSize, containerWidth, containerHeight, "red", 0, 0);
+        let outerStyle = makeJoystickStyle(outerSize, containerWidth, containerHeight, "white", 0, 0);
         let innerSize = this.props.innerSize;
-        let innerStyle = makeJoystickStyle(innerSize, containerWidth, containerHeight, "blue", this.state.x, this.state.y);
+        let innerStyle = makeJoystickStyle(innerSize, containerWidth, containerHeight, "red", this.state.x, this.state.y);
 
         if (!this.state.grabbed){
             innerStyle.transition = "250ms ease";
@@ -141,16 +151,16 @@ class Joystick extends Component {
             onMouseDown: handleMouse(this.grabJoystick),
             onMouseMove: handleMouse(this.moveJoystick),
             onMouseUp: handleMouse(this.releaseJoystick),
-            onMouseOut: handleMouse(this.releaseJoystick),
+            // onMouseOut: handleMouse(this.releaseJoystick),
         };
 
         return (
-            <div>
-                <div id={joystickContainerId} style={containerStyle} {...handlers}>
+            <div style={wrapperStyle}>
+                <div id={this.containerId} style={containerStyle} {...handlers}>
                     <div style={outerStyle}></div>
                     <div style={innerStyle}></div>
                 </div>
-                <button className="btn btn-success" onClick={this.fullscreenJoystick}>Fullscreen</button>
+                {/* <button className="btn btn-success" onClick={this.fullscreenJoystick}>Fullscreen</button> */}
             </div>
         );
     }
