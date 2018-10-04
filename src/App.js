@@ -10,6 +10,7 @@ import './bootstrap.css';
 import HomePage from './home/HomePage.js';
 import SettingsPage from './settings/SettingsPage.js';
 import DrivePage from './drive/DrivePage.js';
+import Dashboard from './dashboard/Dashboard.js';
 
 function make_navbar_link(path, text){
   return (
@@ -34,6 +35,7 @@ class App extends Component {
       ["/drive",    "Drive"],
       ["/nav",      "Navigation"],
       ["/settings", "Settings"],
+      ["/dashboard", "Dashboard"],
     ].map((pair)=>make_navbar_link.apply(null, pair));
     let client = this.client;
     function wrapClient(component){
@@ -55,6 +57,7 @@ class App extends Component {
           <Route exact path="/" component={wrapClient(HomePage)}/>
           <Route exact path="/settings" component={wrapClient(SettingsPage)}/>
           <Route exact path="/drive" component={wrapClient(DrivePage)}/>
+          <Route exact path="/dashboard" component={wrapClient(Dashboard)}/>
         </div>
       </Router>
     );

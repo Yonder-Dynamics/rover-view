@@ -1,0 +1,20 @@
+
+.dash-container{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.dash-container.dash-grid-show > .dash-widget{
+    border-style: solid;
+    border-width: 2px;
+}
+
+.dash-container.dash-edit .widget-edit{
+    display: block;
+}
+
+.widget-edit{
+    z-index: 2;
+    position: absolute;
+    display: none;
+}
