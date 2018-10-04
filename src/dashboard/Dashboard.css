@@ -1,12 +1,16 @@
-
 .dash-container{
     display: flex;
     flex-wrap: wrap;
+    align-content: stretch;
 }
 
 .dash-container.dash-grid-show > .dash-widget{
     border-style: solid;
     border-width: 2px;
+}
+
+.dash-container .highlight-widget{
+    border-color: lightcoral;
 }
 
 .dash-container.dash-edit .widget-edit{
@@ -17,4 +21,18 @@
     z-index: 2;
     position: absolute;
     display: none;
+}
+
+.glyph-btn {
+    margin: 2px;
+    width: 25px;
+    height: 25px;
+}
+
+.widget-align-up {
+    align-self: flex-start;
+}
+
+.widget-align-down {
+    align-self: flex-end;
 }

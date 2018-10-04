@@ -54,10 +54,11 @@ class App extends Component {
               </div>
             </div>
           </nav>
-          <Route exact path="/" component={wrapClient(HomePage)}/>
+          <Dashboard client={client}></Dashboard>
+          {/* <Route exact path="/" component={wrapClient(HomePage)}/>
           <Route exact path="/settings" component={wrapClient(SettingsPage)}/>
           <Route exact path="/drive" component={wrapClient(DrivePage)}/>
-          <Route exact path="/dashboard" component={wrapClient(Dashboard)}/>
+          <Route exact path="/dashboard" component={wrapClient(Dashboard)}/> */}
         </div>
       </Router>
     );
