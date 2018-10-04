@@ -77,7 +77,7 @@ class Joystick extends Component {
             grabbed: grabbed,
         });
         this.props.client.send({
-            angle: info.angle,
+            angle: Math.PI - info.angle,
             magnitude: Math.min(info.magnitude/this.maxDisplacement, 1.0),
         });
     }
@@ -115,6 +115,7 @@ class Joystick extends Component {
         elem.removeEventListener("touchcancel", null);
     }
     render(){
+        let containerHeight = this.state.containerHeight;
         let wrapperStyle = {
             height: containerHeight,
             width: "auto",
@@ -123,7 +124,6 @@ class Joystick extends Component {
             display: "inline-block",
             flexGrow: 1,
         };
-        let containerHeight = this.state.containerHeight;
         let containerWidth = this.state.containerWidth;
         let containerStyle = {
             display: "inline-block",
