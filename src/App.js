@@ -10,6 +10,8 @@ import './bootstrap.css';
 import HomePage from './home/HomePage.js';
 import SettingsPage from './settings/SettingsPage.js';
 import DrivePage from './drive/DrivePage.js';
+
+import Glyphicon from './utils/Glyphicon.js';
 import Dashboard from './dashboard/Dashboard.js';
 
 function make_navbar_link(path, text){
@@ -24,10 +26,18 @@ class App extends Component {
   constructor(props){
     super(props);
 
+    this.state = {
+      mode: "normal",
+    }
+
     this.client = Swagger('/ctrl/swagger.json');
     this.client.catch(err=>{console.log(err)});
 
     this.render.bind(this);
+  }
+  toggleEdit(e){
+    console.log("got here")
+    this.setState({mode: (this.state.mode == "normal")?"edit":"normal"});
   }
   render() {
     let navItems = [
@@ -45,16 +55,18 @@ class App extends Component {
       <Router>
         <div className="App">
           <nav className="control-panel-nav navbar navbar-expand bg-dark">
-            <Link className="navbar-brand" to='/' >
+            {/* <Link className="navbar-brand" to='/' >
               <img src={logo} width="40px" alt="yonder logo"/>
-            </Link>
+            </Link> */}
             <div className="navbar-collapse">
              <div className="navbar-nav">
-                { navItems }
+                <button type="button" className="btn btn-success" onClick={this.toggleEdit.bind(this)}>
+                  <Glyphicon type="edit"/>
+                </button>
               </div>
             </div>
           </nav>
-          <Dashboard client={client}></Dashboard>
+          <Dashboard client={client} mode={this.state.mode}></Dashboard>
           {/* <Route exact path="/" component={wrapClient(HomePage)}/>
           <Route exact path="/settings" component={wrapClient(SettingsPage)}/>
           <Route exact path="/drive" component={wrapClient(DrivePage)}/>

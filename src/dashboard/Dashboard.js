@@ -91,11 +91,14 @@ class Dashboard extends Component{
     }
     render(){
         let classes = [
-            "dash-container", "dash-grid-show", "dash-edit",
-        ].join(" ");
+            "dash-container", "dash-grid-show",
+        ];
+        if (this.props.mode === "edit"){
+            classes.push("dash-edit");
+        }
         return (
             <div id="dashboard-root" className="container-fluid">
-                <div className={classes}>
+                <div className={classes.join(" ")}>
                 {
                     buildWidgets(this.props.client, this.state.layout, {
                         moveUp:this.moveUp.bind(this),
