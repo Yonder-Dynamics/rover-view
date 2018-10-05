@@ -1,25 +1,10 @@
 import React, {Component} from 'react';
 
-import Joystick from '../drive/Joystick.js';
+import JoystickWidget from './widgets/JoystickWidget.js';
 import Widget from './widgets/Widget.js';
 import EditWidget from './widgets/EditWidget.js';
 
 import './Dashboard.css';
-
-class JoystickClient {
-    constructor(client){
-        this.client = client;
-
-        this.send = this.send.bind(this);
-    }
-    send(data){
-        this.client.then( client => {
-            client.apis.default.joystick_drive({
-                joystick: data,
-            });
-        });
-    }
-};
 
 /*
  * Use dashboards for everything
@@ -41,24 +26,61 @@ class Dashboard extends Component{
 
         this.state = {layout: {
             widgets: [
-                { wtype: "edit", wprops: {color: "yellow"}},
-                { wtype: "edit", wprops: {color: "green"}},
+                { wtype: "edit", wprops: {
+                    name: "yellow",
+                    color: "yellow",
+                    height: 100,
+                    width: 100,
+                    alignment: {
+                        vertical: "auto",
+                    },
+                }},
+                { wtype: "joystick", wprops: {
+                    name: "green",
+                    color: "green",
+                    height: 200,
+                    width: 300,
+                    alignment: {
+                        vertical: "auto",
+                    },
+                }},
+                { wtype: "edit", wprops: {
+                    name: "red",
+                    color: "red",
+                    height: 100,
+                    width: 100,
+                    alignment: {
+                        vertical: "auto",
+                    },
+                }},
             ],
         }};
 
-        this.client = new JoystickClient(this.props.client);
-
         this.swap = this.swap.bind(this);
+        this.changeAlignment = this.changeAlignment.bind(this);
     }
-    moveBack(idx){
+    moveLeft(idx){
         if (idx > 0){
             this.swap(idx, idx - 1);
         }
     }
-    moveForward(idx){
+    moveRight(idx){
         if (idx < (this.state.layout.widgets.length - 1)){
             this.swap(idx, idx + 1);
         }
+    }
+    moveUp(idx){
+        this.changeAlignment(idx, "up");
+    }
+    moveDown(idx){
+        this.changeAlignment(idx, "down");
+    }
+    clearAlignment(idx){
+        this.changeAlignment(idx, "auto");
+    }
+    changeAlignment(idx, alignment){
+        this.state.layout.widgets[idx].wprops.alignment.vertical = alignment;
+        this.setState(this.state);
     }
     swap(a, b){
         let temp = this.state.layout.widgets[a];
@@ -68,33 +90,43 @@ class Dashboard extends Component{
         this.setState(this.state); //redraw
     }
     render(){
-        return buildDashboard(this.client, this.state.layout, {
-            moveBack: this.moveBack.bind(this),
-            moveForward: this.moveForward.bind(this),
-        });
+        let classes = [
+            "dash-container", "dash-grid-show", "dash-edit",
+        ].join(" ");
+        return (
+            <div id="dashboard-root" className="container-fluid">
+                <div className={classes}>
+                {
+                    buildWidgets(this.props.client, this.state.layout, {
+                        moveUp:this.moveUp.bind(this),
+                        moveLeft: this.moveLeft.bind(this),
+                        moveRight: this.moveRight.bind(this),
+                        moveDown: this.moveDown.bind(this),
+                        clearAlignment: this.clearAlignment.bind(this),
+                    })
+                }
+                </div>
+            </div>
+        );
     }
 };
 
-function buildDashboard(client, layout, hooks){
+function buildWidgets(client, layout, hooks){
     let widgetTypes = {
         edit: EditWidget,
+        joystick: JoystickWidget,
     };
-    let widgets = layout.widgets.map(
-        (widget, idx)=>React.createElement(widgetTypes[widget.wtype], {
-            key: idx,
-            idx: idx,
-            moveBack: hooks.moveBack,
-            moveForward: hooks.moveForward,
-            ...widget.wprops,
-        })
-    );
-    return (
-        <div id="dashboard-root" className="container-fluid">
-            <div className="dash-container dash-grid-show">
-                {widgets}
-            </div>
-        </div>
-    )
+    let widgets = layout.widgets.map((widget, idx)=>(
+        <Widget client={client} key={idx} idx={idx} hooks={hooks} {...widget.wprops}>
+            {
+                React.createElement(widgetTypes[widget.wtype], {
+                    client: client,
+                    ...widget.wprops,
+                })
+            }
+        </Widget>
+    ));
+    return widgets;
 
 }
 
